@@ -1,0 +1,348 @@
+openapi: 3.0.3
+info:
+  title: AI Chat Agent API
+  description: API for AI-powered chatbot for natural language todo management
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.example.com
+    description: Production server
+
+paths:
+  /api/chat/send:
+    post:
+      summary: Send a message to the AI chat agent
+      description: Sends a user message to the AI agent and returns the AI response
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '200':
+          description: Successfully processed message and returned AI response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendMessageResponse'
+        '400':
+          description: Invalid request or message content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error during AI processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/chat/history/{conversation_id}:
+    get:
+      summary: Get conversation history
+      description: Retrieve the message history for a specific conversation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The ID of the conversation to retrieve
+      responses:
+        '200':
+          description: Successfully retrieved conversation history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetHistoryResponse'
+        '401':
+          description: Unauthorized - Missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - User does not have access to this conversation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Conversation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/chat/conversations:
+    get:
+      summary: Get user's conversations
+      description: Retrieve a list of conversations for the authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved user's conversations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetConversationsResponse'
+        '401':
+          description: Unauthorized - Missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Start a new conversation
+      description: Create a new conversation for the authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Successfully created a new conversation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateConversationResponse'
+        '401':
+          description: Unauthorized - Missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    SendMessageRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: The message content from the user
+          example: "Add a task to buy groceries"
+        conversation_id:
+          type: string
+          format: uuid
+          description: Optional. ID of existing conversation. If omitted, creates new conversation.
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+    SendMessageResponse:
+      type: object
+      required:
+        - conversation_id
+        - user_message
+        - ai_response
+        - timestamp
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+          description: The ID of the conversation
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        user_message:
+          $ref: '#/components/schemas/Message'
+        ai_response:
+          $ref: '#/components/schemas/Message'
+        timestamp:
+          type: string
+          format: date-time
+          description: When the response was generated
+
+    GetHistoryResponse:
+      type: object
+      required:
+        - conversation
+        - messages
+      properties:
+        conversation:
+          $ref: '#/components/schemas/Conversation'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+
+    GetConversationsResponse:
+      type: object
+      required:
+        - conversations
+      properties:
+        conversations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationSummary'
+
+    CreateConversationResponse:
+      type: object
+      required:
+        - conversation
+      properties:
+        conversation:
+          $ref: '#/components/schemas/Conversation'
+
+    Conversation:
+      type: object
+      required:
+        - id
+        - user_id
+        - title
+        - created_at
+        - updated_at
+        - is_active
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the conversation
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        user_id:
+          type: string
+          format: uuid
+          description: ID of the user who owns the conversation
+          example: "987fb654-e321-dcba-fedc-ba9876543210"
+        title:
+          type: string
+          description: Auto-generated title based on conversation content
+          example: "Grocery list management"
+        created_at:
+          type: string
+          format: date-time
+          description: When the conversation was created
+        updated_at:
+          type: string
+          format: date-time
+          description: When the conversation was last updated
+        is_active:
+          type: boolean
+          description: Whether the conversation is currently active
+          example: true
+
+    ConversationSummary:
+      type: object
+      required:
+        - id
+        - title
+        - created_at
+        - updated_at
+        - is_active
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the conversation
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        title:
+          type: string
+          description: Auto-generated title based on conversation content
+          example: "Grocery list management"
+        created_at:
+          type: string
+          format: date-time
+          description: When the conversation was created
+        updated_at:
+          type: string
+          format: date-time
+          description: When the conversation was last updated
+        is_active:
+          type: boolean
+          description: Whether the conversation is currently active
+          example: true
+
+    Message:
+      type: object
+      required:
+        - id
+        - conversation_id
+        - sender_type
+        - content
+        - timestamp
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the message
+          example: "abcde123-4567-89ab-cdef-123456789012"
+        conversation_id:
+          type: string
+          format: uuid
+          description: ID of the conversation this message belongs to
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        sender_type:
+          type: string
+          enum: [user, ai]
+          description: Indicates if the message is from user or AI
+          example: "user"
+        content:
+          type: string
+          description: The actual message content
+          example: "Add a task to buy milk"
+        timestamp:
+          type: string
+          format: date-time
+          description: When the message was sent
+        metadata:
+          type: object
+          description: Additional data for AI processing (optional)
+          example: {"intent": "create_todo", "entities": [{"type": "item", "value": "milk"}]}
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+          example: "INVALID_REQUEST"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Message content is required"

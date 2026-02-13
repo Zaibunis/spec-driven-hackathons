@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-frontend-deployment
+  namespace: todo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-frontend
+  template:
+    metadata:
+      labels:
+        app: todo-frontend
+    spec:
+      containers:
+      - name: todo-frontend
+        image: todo-frontend:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+        env:
+        - name: BACKEND_URL
+          value: "http://todo-backend-service:8000"
+        - name: NEXT_PUBLIC_BACKEND_URL
+          value: "http://todo-backend-service:8000"
+        - name: NEXT_PUBLIC_GEMINI_API_KEY
+          value: "AIzaSyCMEPL0ACvQOAphlm0D_Rv6EHGMDTO2QQs"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-frontend-service
+  namespace: todo-app
+spec:
+  selector:
+    app: todo-frontend
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: LoadBalancer
