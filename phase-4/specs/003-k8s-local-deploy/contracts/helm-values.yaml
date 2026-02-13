@@ -1,0 +1,65 @@
+# Helm Chart Values Interface: Phase 4 Local Kubernetes Deployment
+# This defines the configuration contract for the local Minikube Deployment
+
+frontend:
+  # Container image configuration
+  image:
+    repository: todo-chatbot-frontend
+    tag: latest
+    pullPolicy: Never  # Local Minikube builds, do not pull from registry
+
+  # Number of frontend pods
+  replicaCount: 2
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 80        # Cluster-accessible port
+    targetPort: 3000  # Container port
+
+  # Resource requests and limits
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+backend:
+  # Container image configuration
+  image:
+    repository: todo-chatbot-backend
+    tag: latest
+    pullPolicy: Never  # Local Minikube builds
+
+  # Number of backend pods
+  replicaCount: 2
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 8000       # Cluster-accessible port
+    targetPort: 8000 # Container port
+
+  # Resource requests and limits
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+# Application configuration injected via ConfigMap
+config:
+  environment: development
+  # Frontend needs backend API URL for browser requests
+  nextPublicApiUrl: "http://localhost:8000"
+
+# Secrets injected via separate secrets.yaml or --set
+secrets:
+  databaseUrl: ""
+  openaiApiKey: ""
+  geminiApiKey: ""
+  betterAuthSecret: ""
