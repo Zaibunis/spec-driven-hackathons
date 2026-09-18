@@ -6,6 +6,7 @@ from sqlmodel import Session, select
 from src.models.database import get_session
 from src.models.tasks import Task
 from src.api.schemas.tasks import TaskCreate, TaskUpdate, TaskResponse
+from src.api.schemas.tasks import Task as TaskSchema
 from src.api.dependencies.auth import get_current_user, TokenUser
 from src.api.schemas.errors import ValidationError, NotFoundError
 
@@ -79,7 +80,7 @@ async def create_task(
     current_user: TokenUser = Depends(get_current_user),
 ):
     task = service.create_task(current_user.user_id, task_data)
-    return {"task": TaskResponse.model_validate(task)}
+    return {"task": TaskResponse(task=TaskSchema.model_validate(task))}
 
 
 @router.get("")
@@ -90,7 +91,7 @@ async def list_tasks(
     current_user: TokenUser = Depends(get_current_user),
 ):
     tasks = service.get_tasks(current_user.user_id, page, page_size)
-    return {"tasks": [TaskResponse.model_validate(t) for t in tasks]}
+    return {"tasks": [TaskSchema.model_validate(t) for t in tasks]}
 
 
 @router.get("/{task_id}")
@@ -100,7 +101,7 @@ async def get_task(
     current_user: TokenUser = Depends(get_current_user),
 ):
     task = service.get_task(current_user.user_id, task_id)
-    return {"task": TaskResponse.model_validate(task)}
+    return {"task": TaskResponse(task=TaskSchema.model_validate(task))}
 
 
 @router.put("/{task_id}")
@@ -112,7 +113,7 @@ async def update_task(
     current_user: TokenUser = Depends(get_current_user),
 ):
     task = service.update_task(current_user.user_id, task_id, task_data)
-    return {"task": TaskResponse.model_validate(task)}
+    return {"task": TaskResponse(task=TaskSchema.model_validate(task))}
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)

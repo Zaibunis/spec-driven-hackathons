@@ -15,9 +15,10 @@ class Task(SQLModel, table=True):
     """Task entity with ownership enforcement."""
 
     __tablename__ = "task"
+    __table_args__ = {"extend_existing": True}
 
     id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
-    user_id: UUID = Field(foreign_key="user.id", nullable=False, index=True)
+    user_id: UUID = Field(foreign_key="users.id", nullable=False, index=True)
     title: str = Field(max_length=255, nullable=False)
     description: Optional[str] = Field(max_length=2000, default=None)
     is_completed: bool = Field(default=False, index=False)

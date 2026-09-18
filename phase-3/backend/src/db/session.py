@@ -5,16 +5,14 @@ from functools import lru_cache
 
 from sqlmodel import Session, SQLModel, create_engine
 
-from core.config import database_url
+from src.core.config import database_url
 
 
 @lru_cache(maxsize=1)
 def get_engine():
     url = database_url()
 
-    connect_args = None
-    if url.startswith("sqlite"):
-        connect_args = {"check_same_thread": False}
+    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
 
     return create_engine(
         url,

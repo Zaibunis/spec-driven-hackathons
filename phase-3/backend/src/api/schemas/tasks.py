@@ -5,16 +5,20 @@ from datetime import datetime
 
 # --- Task Model ---
 class Task(BaseModel):
+    model_config = {"from_attributes": True}  # allow ORM object -> schema
+
     id: UUID
     user_id: UUID
     title: str
-    details: Optional[str] = None
+    description: Optional[str] = None
     is_completed: bool
     created_at: datetime
     updated_at: datetime
 
 # --- Single Task Response ---
 class TaskResponse(BaseModel):
+    model_config = {"from_attributes": True}
+
     task: Task
 
 # --- List of Tasks Response ---

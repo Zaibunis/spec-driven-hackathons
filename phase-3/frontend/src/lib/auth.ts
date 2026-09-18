@@ -4,20 +4,12 @@
  */
 
 import { createAuthClient } from "better-auth/client";
+import { getApiBaseUrl } from './api-url';
 
-// Create authentication client with dynamic base URL for production
-let authBaseURL = process.env.NEXT_PUBLIC_API_URL || "https://faria45678-chat-agent.hf.space/";
-
-// In production, adjust the URL to remove /api/v1 if it's part of the NEXT_PUBLIC_API_URL
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-  if (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.includes('/api/v1')) {
-    // Extract the base URL without /api/v1
-    authBaseURL = process.env.NEXT_PUBLIC_API_URL.replace('/api/v1', '');
-  } else if (!process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL === "https://faria45678-chat-agent.hf.space/") {
-    // Fallback to window origin if no env var is set
-    authBaseURL = window.location.origin;
-  }
-}
+// Better Auth client points at the backend (single source of truth via
+// getApiBaseUrl). The old window-origin / hf.space fallbacks are gone - the
+// backend is a separate deployment, so self-origin requests 404 on Vercel.
+const authBaseURL = getApiBaseUrl();
 
 export const authClient = createAuthClient({
   baseURL: authBaseURL,

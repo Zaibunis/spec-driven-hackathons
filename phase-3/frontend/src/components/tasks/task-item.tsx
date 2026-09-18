@@ -10,15 +10,15 @@ interface TaskItemProps {
 
 export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, onDelete, onToggle }) => {
   return (
-    <li className="bg-gray-800/60 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50 hover:border-gray-600/50 transition-all duration-200 group">
-      <div className="flex items-start gap-4">
+    <li className="surface-card rounded-xl p-4 sm:p-5 hover:border-blue-500/30 transition-all duration-200 group">
+      <div className="flex items-start gap-3 sm:gap-4">
         <div className="flex items-center h-6 pt-1">
           <input
             id={`task-${task.id}`}
             type="checkbox"
             checked={task.completed}
             onChange={onToggle}
-            className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer transition-all duration-200"
+            className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer transition-all duration-200 accent-blue-500"
           />
         </div>
 
@@ -42,7 +42,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, onDelete, onTo
               )}
             </div>
 
-            <div className="flex items-center gap-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div className="flex items-center gap-2 ml-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
               <button
                 onClick={onEdit}
                 className="p-2 text-gray-400 hover:text-blue-400 hover:bg-gray-700/50 rounded-lg transition-colors duration-200"

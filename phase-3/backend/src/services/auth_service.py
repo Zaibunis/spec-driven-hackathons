@@ -34,8 +34,10 @@ class BetterAuthIntegration:
     """
 
     def __init__(self):
-        # Get secret from environment or config
-        self.secret = os.getenv("JWT_SECRET", "fallback_secret_key_for_dev")
+        # Secret comes from central Settings (env/.env, validated at startup).
+        # No hardcoded fallback: if JWT_SECRET is missing, settings raise on load.
+        from ..config import settings
+        self.secret = settings.jwt_secret
         self.algorithm = "HS256"
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:

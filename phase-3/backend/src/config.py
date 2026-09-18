@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     rate_limit_requests: int = 100
     rate_limit_window: int = 3600
 
+    mcp_server_url: str = "local"  # "local" = in-process MCP tool handlers
+
     debug: bool = False
     log_level: str = "info"
 

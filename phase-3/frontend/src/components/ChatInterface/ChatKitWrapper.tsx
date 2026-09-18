@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ChatMessage } from '../types/chatTypes';
 import { addMessageToConversation } from '../utils/apiClient';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ChatUI } from './ChatUI/page'; // Your custom ChatUI component
+import { getApiBaseUrl } from '../../lib/api-url';
 
 interface ChatKitWrapperProps {
   userId: string;
@@ -14,35 +14,51 @@ const ChatKitWrapper: React.FC<ChatKitWrapperProps> = ({ userId }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const geminiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-
-    if (!geminiKey) {
-      setError('Missing NEXT_PUBLIC_GEMINI_API_KEY');
-    }
-
-    console.log('ChatKit initialized (Gemini mode, no JWT required)');
+    console.log('Chat initialized (backend MCP agent mode)');
   }, []);
+
+  // Broadcast so the tasks dashboard refetches after chat-driven task changes.
+  const notifyTasksChanged = () => {
+    window.dispatchEvent(new CustomEvent('todo:tasks-changed'));
+  };
 
   const handleSendMessage = async (input: string) => {
     setIsLoading(true);
     setError(null);
 
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+      content: input,
+      role: 'user',
+      timestamp: new Date(),
+      status: 'sending' as const,
+    };
+    setMessages(prev => [...prev, userMessage]);
+
     try {
-      // 1️⃣ Add user message immediately
-      const userMessage: ChatMessage = {
-        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
-        content: input,
-        role: 'user',
-        timestamp: new Date(),
-        status: 'sending' as const,
-      };
+      const token = localStorage.getItem('access_token');
+      if (!token) throw new Error('Not signed in');
 
-      setMessages(prev => [...prev, userMessage]);
+      const apiUrl = getApiBaseUrl();
+      const res = await fetch(`${apiUrl}/api/v1/${userId}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ message: input }),
+      });
 
-      // 2️⃣ Send to Gemini
-      const assistantText = await sendToGemini(input);
+      if (res.status === 401) throw new Error('Session expired. Please sign in again.');
+      if (res.status === 403) throw new Error('User mismatch for this chat session.');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.detail || `Backend error (HTTP ${res.status})`);
+      }
 
-      // 3️⃣ Add assistant message
+      const data = await res.json();
+      const assistantText: string = data.assistant_message ?? data.assistantMessage ?? '';
+
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
         content: assistantText,
@@ -57,28 +73,18 @@ const ChatKitWrapper: React.FC<ChatKitWrapperProps> = ({ userId }) => {
         ).concat(assistantMessage)
       );
 
-      // 4️⃣ Optionally store messages in history
       addMessageToConversation(userId, userMessage);
       addMessageToConversation(userId, assistantMessage);
 
+      // The backend agent may have added/updated/completed/deleted tasks via MCP.
+      // Heuristic: any assistant confirmation triggers a dashboard refetch.
+      notifyTasksChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
-      console.error('Error sending message to Gemini:', err);
+      console.error('Error sending message to backend chat:', err);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const sendToGemini = async (message: string) => {
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) throw new Error('Missing NEXT_PUBLIC_GEMINI_API_KEY');
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-    const result = await model.generateContent(message);
-    const response = await result.response;
-    return response.text();
   };
 
   return (

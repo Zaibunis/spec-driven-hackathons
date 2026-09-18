@@ -52,3 +52,35 @@ body {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+
+/* Aurora app background: layered radial glows over deep base */
+.app-bg {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(59, 130, 246, 0.12), transparent 60%),
+    radial-gradient(1000px 500px at 85% 0%, rgba(168, 85, 247, 0.10), transparent 60%),
+    radial-gradient(900px 700px at 50% 110%, rgba(34, 211, 238, 0.08), transparent 60%),
+    linear-gradient(180deg, #0a0a0f 0%, #0b0d14 50%, #0a0a0f 100%);
+  background-attachment: fixed;
+}
+
+/* Smooth scrolling + nicer text rendering */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Card elevation utility used across dashboard surfaces */
+.surface-card {
+  background: rgba(17, 24, 39, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(75, 85, 99, 0.35);
+}
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}

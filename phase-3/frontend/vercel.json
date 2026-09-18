@@ -7,11 +7,5 @@
       "use": "@vercel/next",
       "config": {}
     }
-  ],
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/"
-    }
   ]
 }

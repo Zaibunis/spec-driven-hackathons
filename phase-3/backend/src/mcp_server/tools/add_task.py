@@ -14,6 +14,10 @@ from sqlmodel import select
 
 from ..auth import AuthError, validate_token
 from ..database import async_engine
+
+# Import the main app User model so the FK target ("users") is registered in
+# SQLModel metadata before Task's foreign key resolves at flush time.
+from ...models.user import User  # noqa: F401
 from ..models import Task
 
 logger = logging.getLogger(__name__)
@@ -32,7 +36,7 @@ async def handle(arguments: Dict[str, Any]) -> Dict[str, Any]:
     # Extract arguments
     title = arguments.get("title", "").strip()
     description = arguments.get("description", "").strip() if arguments.get("description") else None
-    token = arguments.get("_jwt_token")  # Token passed in context
+    token = arguments.get("_jwt_token")  # Injected server-side by the chat agent, never by the model
 
     # Validate inputs
     if not title:

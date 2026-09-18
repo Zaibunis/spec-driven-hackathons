@@ -5,23 +5,43 @@ Loads environment variables and provides database connection configuration.
 """
 
 import os
-from typing import Optional
+
+from dotenv import load_dotenv
+
+# Load backend/.env so MCP tools work regardless of how uvicorn was started
+# (with or without --env-file). Real env vars still take precedence.
+load_dotenv()
 
 
 class Config:
-    """Database and server configuration."""
+    """Database and server configuration.
 
-    # Database
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "postgresql://neondb_owner:npg_sBF09fmvOdTg@ep-green-wave-ahvnklxh-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-    )
+    Secrets are required from the environment - no hardcoded defaults.
+    Values are resolved lazily (at property access) so importing this module
+    does not fail when env vars are unset; accessing a missing required var
+    raises immediately with a clear message.
+    """
 
-    # JWT
-    JWT_SECRET: str = os.getenv(
-        "JWT_SECRET",
-        "change-me-in-production"
-    )
+    @property
+    def DATABASE_URL(self) -> str:
+        """Database connection string. Required."""
+        value = os.environ.get("DATABASE_URL")
+        if not value:
+            raise RuntimeError(
+                "DATABASE_URL is not set. Configure it via environment (no defaults allowed)."
+            )
+        return value
+
+    @property
+    def JWT_SECRET(self) -> str:
+        """JWT signing secret. Required."""
+        value = os.environ.get("JWT_SECRET")
+        if not value:
+            raise RuntimeError(
+                "JWT_SECRET is not set. Configure it via environment (no defaults allowed)."
+            )
+        return value
+
     JWT_ALGORITHM: str = "HS256"
 
     # MCP Server
@@ -33,6 +53,8 @@ class Config:
         """Validate required configuration."""
         if not cls.DATABASE_URL or cls.DATABASE_URL.startswith("postgresql://"):
             raise ValueError("DATABASE_URL must be set and use asyncpg driver")
-        if cls.JWT_SECRET == "change-me-in-production":
-            import warnings
-            warnings.warn("JWT_SECRET is not set; using default insecure value", UserWarning)
+
+
+# Module-level instance so `Config.DATABASE_URL` property access works everywhere
+# (e.g. `from .config import Config; Config.JWT_SECRET`).
+Config = Config()

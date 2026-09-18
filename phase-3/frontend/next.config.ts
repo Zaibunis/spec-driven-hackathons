@@ -1,11 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   experimental: {
     serverActions: {},
   },
-  // Ensure proper asset prefix for Vercel
-  assetPrefix: process.env.NODE_ENV === 'production' ? '' : undefined,
+  // Remove asset prefix to ensure assets are served correctly in Docker
+  // assetPrefix: process.env.NODE_ENV === 'production' ? '' : undefined,
 };
 
 export default nextConfig;

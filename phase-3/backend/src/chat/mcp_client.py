@@ -28,8 +28,9 @@ class MCPClient:
     This implementation directly calls MCP server handlers.
     """
 
-    def __init__(self, server_url: Optional[str] = None):
-        self._server_url = server_url or settings.MCP_SERVER_URL
+    def __init__(self, server_url: Optional[str] = None, jwt_token: str = ""):
+        self._server_url = server_url or settings.mcp_server_url
+        self._jwt_token = jwt_token
 
     async def call_tool(self, name: str, arguments: dict[str, Any]) -> MCPToolResult:
         try:
@@ -55,7 +56,12 @@ class MCPClient:
                     error={"code": "TOOL_NOT_FOUND", "message": f"Unknown tool: {name}"},
                 )
 
-            result = await tool_map[name](arguments)
+            # Inject authentication context server-side.
+            # The model can only request tool names/args; it can never set the token.
+            call_args = dict(arguments)
+            call_args["_jwt_token"] = self._jwt_token
+
+            result = await tool_map[name](call_args)
 
             if result.get("success"):
                 return MCPToolResult(success=True, data=result)

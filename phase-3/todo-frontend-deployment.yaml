@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-frontend-deployment
+  namespace: todo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-frontend
+  template:
+    metadata:
+      labels:
+        app: todo-frontend
+    spec:
+      # Frontend does not need Kubernetes API access
+      automountServiceAccountToken: false
+      containers:
+      - name: todo-frontend
+        image: todo-frontend:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        env:
+        - name: BACKEND_URL
+          value: "http://todo-backend-service:8000"
+        - name: NEXT_PUBLIC_BACKEND_URL
+          value: "http://todo-backend-service:8000"
+        - name: NEXT_PUBLIC_GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: todo-backend-secrets
+              key: GEMINI_API_KEY
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-frontend-service
+  namespace: todo-app
+spec:
+  selector:
+    app: todo-frontend
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: LoadBalancer
